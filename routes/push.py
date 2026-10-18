@@ -112,7 +112,7 @@ def test_push():
                 {
                     "title": "Smart Medical Box",
                     "body": "Test notification received successfully!",
-                    "url": "/frontend/dashboard.html",
+                    "url": "/dashboard.html",
                 },
             )
             sent += 1

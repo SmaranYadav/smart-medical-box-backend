@@ -14,22 +14,30 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
 if not app.config["SECRET_KEY"]:
-    raise RuntimeError("SECRET_KEY is missing. Add it to backend/.env")
+    raise RuntimeError("SECRET_KEY is missing. Configure it in the environment.")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=False
+    SESSION_COOKIE_SAMESITE=os.getenv("SESSION_COOKIE_SAMESITE", "Lax"),
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "false").lower()
+    == "true"
+)
+
+allowed_origins = {
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+    "http://127.0.0.1:5501",
+    "http://localhost:5501",
+}
+allowed_origins.update(
+    origin.strip()
+    for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
+    if origin.strip()
 )
 
 CORS(
     app,
-    origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "http://127.0.0.1:5501",
-        "http://localhost:5501"
-    ],
+    origins=sorted(allowed_origins),
     supports_credentials=True
 )
 
@@ -56,8 +64,8 @@ if __name__ == "__main__":
     start_scheduler()
 
     app.run(
-        host="127.0.0.1",
-        port=5000,
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", "5000")),
         debug=False,
         use_reloader=False
     )

@@ -136,7 +136,7 @@ def check_due_reminders():
                         f'medicine-{medicine["medicine_id"]}-'
                         f'{today}-{current_time}'
                     ),
-                    "url": "/frontend/dashboard.html"
+                    "url": "/dashboard.html"
                 }
 
                 try:
