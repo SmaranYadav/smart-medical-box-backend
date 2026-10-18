@@ -3,6 +3,7 @@ import json
 
 from flask import Blueprint, jsonify, request, session
 from pywebpush import WebPushException
+from psycopg2.extras import RealDictCursor
 
 from db import get_connection
 from push_utils import get_vapid_public_key, send_push
@@ -79,7 +80,7 @@ def test_push():
         return jsonify({"error": "Please log in first"}), 401
 
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
     try:
         cursor.execute(
             """

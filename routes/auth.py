@@ -1,5 +1,7 @@
 
 from flask import Blueprint, request, jsonify, session
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_connection
 
@@ -34,10 +36,11 @@ def register():
         conn.commit()
         return jsonify({"message": "Registration successful"}), 201
 
-    except Exception as error:
+    except psycopg2.errors.UniqueViolation:
         conn.rollback()
-        if getattr(error, "errno", None) == 1062:
-            return jsonify({"error": "Email already registered"}), 409
+        return jsonify({"error": "Email already registered"}), 409
+    except psycopg2.Error:
+        conn.rollback()
         return jsonify({"error": "Could not register user"}), 500
 
     finally:
@@ -55,7 +58,7 @@ def login():
         return jsonify({"error": "Email and password are required"}), 400
 
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
         cursor.execute(
@@ -99,7 +102,7 @@ def me():
         return jsonify({"error": "Please log in"}), 401
 
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
         cursor.execute(

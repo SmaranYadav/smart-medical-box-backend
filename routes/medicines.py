@@ -2,6 +2,8 @@ import json
 from datetime import date, time as datetime_time
 
 from flask import Blueprint, request, jsonify, session
+from psycopg2.extras import Json, RealDictCursor
+
 from db import get_connection
 
 medicines_bp = Blueprint("medicines", __name__)
@@ -52,7 +54,7 @@ def list_medicines():
         return jsonify({"error": "Please log in"}), 401
 
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
         cursor.execute(
@@ -158,24 +160,26 @@ def add_medicine():
                 (user_id, medicine_name, dosage, frequency,
                  dose_times, start_date, end_date, instructions, status)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'Active')
+            RETURNING medicine_id
             """,
             (
                 user_id,
                 name,
                 dosage,
                 frequency,
-                json.dumps(times),
+                Json(times),
                 start_date,
                 end_date,
                 instructions
             )
         )
+        medicine_id = cursor.fetchone()[0]
 
         conn.commit()
 
         return jsonify({
             "message": "Medicine added successfully",
-            "medicine_id": cursor.lastrowid
+            "medicine_id": medicine_id
         }), 201
 
     except Exception:
@@ -197,7 +201,7 @@ def update_medicine(medicine_id):
     data = request.get_json(silent=True) or {}
 
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     try:
         medicine = get_medicine_for_user(cursor, medicine_id, user_id)
