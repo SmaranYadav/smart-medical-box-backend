@@ -11,6 +11,10 @@ try:
     for statement in schema.split(";"):
         if statement.strip():
             cursor.execute(statement)
+    connection.commit()
+except Exception:
+    connection.rollback()
+    raise
 finally:
     cursor.close()
     connection.close()
