@@ -29,6 +29,12 @@ notifications require `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and
 `VAPID_SUBJECT` to be set as Render environment variables. Keep the private key
 secret.
 
+Notification sound and vibration are controlled by the receiving device and
+browser. On Android, allow sound and vibration for the browser's notifications
+and this site. On iOS, web-push sound and vibration support depends on iOS
+notification settings and browser support. The optional dashboard tone only
+plays while the dashboard is open and the sound option is enabled.
+
 ## Vercel frontend
 
 1. Import the `smart-medical-box-frontend` repository into Vercel. Use the
