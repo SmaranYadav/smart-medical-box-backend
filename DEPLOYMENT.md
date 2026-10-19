@@ -29,6 +29,11 @@ notifications require `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and
 `VAPID_SUBJECT` to be set as Render environment variables. Keep the private key
 secret.
 
+The reminder scheduler checks for due doses every five seconds. Actual delivery
+can take longer due to the push provider and receiving device. Render's free
+web service sleeps after inactivity, so reminders are not dependable on the
+free plan.
+
 Notification sound and vibration are controlled by the receiving device and
 browser. On Android, allow sound and vibration for the browser's notifications
 and this site. On iOS, web-push sound and vibration support depends on iOS

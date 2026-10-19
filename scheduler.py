@@ -12,7 +12,7 @@ from db import get_connection
 from push_utils import send_push
 
 TIMEZONE = ZoneInfo("Asia/Kolkata")
-CHECK_INTERVAL_SECONDS = 15
+CHECK_INTERVAL_SECONDS = 5
 
 
 def ensure_reminder_log_table():
