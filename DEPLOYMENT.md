@@ -1,7 +1,30 @@
 # Deploying Smart Medical Box
 
-The frontend is a static site on Vercel; the Flask API and PostgreSQL database
-run on Render. The frontend and backend repositories are separate.
+The frontend is a static site on Vercel and the Flask API runs on Render. The
+backend supports both MySQL and PostgreSQL. Set `MYSQL_URL` to use MySQL;
+otherwise, it uses `DATABASE_URL` for PostgreSQL. The two GitHub repositories
+are separate.
+
+## Local MySQL development
+
+Install MySQL 8.0 and create a database and dedicated application user:
+
+```sql
+CREATE DATABASE smart_medical_box
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'smart_medical_box'@'localhost'
+    IDENTIFIED BY 'choose-a-strong-password';
+GRANT ALL PRIVILEGES ON smart_medical_box.*
+    TO 'smart_medical_box'@'localhost';
+```
+
+Copy `.env.example` to `.env`, set `MYSQL_URL` to the local database connection
+URL, and set a private `SECRET_KEY`. URL-encode special characters in database
+credentials. Do not commit `.env` or share its contents. When `MYSQL_URL` is
+set, the backend uses MySQL and creates tables from `schema.mysql.sql`.
+
+The backend can also use local PostgreSQL by leaving `MYSQL_URL` unset and
+setting `DATABASE_URL`; that schema is in `schema.sql`.
 
 ## Render backend
 
@@ -9,13 +32,13 @@ run on Render. The frontend and backend repositories are separate.
    `smart-medical-box-backend` GitHub repository into Render as a Blueprint,
    using the repository root. Render reads `render.yaml` to configure the
    Python web service and PostgreSQL database.
-2. The service's `DATABASE_URL` is linked to the database by the Blueprint.
-   Render generates the Flask session secret, and secure session cookies are
-   enabled.
-3. On its first successful database connection, the service creates the
-   application tables from `schema.sql` if they do not exist. The scheduler
-   creates its reminder-log table at startup. Check `/api/health` on the
-   generated Render URL.
+2. The Blueprint sets `DATABASE_URL` to the Render PostgreSQL database. Do not
+   set `MYSQL_URL` on the Render service unless you have a hosted MySQL server:
+   the local MySQL server at `localhost` or `127.0.0.1` belongs to the
+   developer's computer, not Render.
+3. On startup, the backend initializes the schema for the configured database.
+   Render generates the Flask session secret and secure session cookies are
+   enabled. Check `/api/health` on the generated Render URL.
 
 The Blueprint uses Render's free PostgreSQL and web-service plans for a demo.
 Free PostgreSQL is limited to 1 GB and expires 30 days after creation; after a
@@ -51,8 +74,7 @@ plays while the dashboard is open and the sound option is enabled.
    Render, keeping session cookies same-origin in the browser.
 
 The frontend continues to use `http://127.0.0.1:5000` for local development
-when opened from localhost.
-
-For local backend development, install `requirements.txt`, create a local
-PostgreSQL database, and configure `DATABASE_URL` and `SECRET_KEY` in
-`backend/.env` using `.env.example` as a template.
+when opened from localhost. For local backend development, install
+`requirements.txt`, configure MySQL or PostgreSQL in `backend/.env`, then run
+the Flask app. The service initializes the corresponding database schema on
+startup.

@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from routes.push import push_bp
 from routes.auth import auth_bp
 from routes.medicines import medicines_bp
+from db import initialize_database
 from scheduler import start_scheduler
 # Load environment variables from backend/.env
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -61,6 +62,7 @@ def health():
 
 
 if __name__ == "__main__":
+    initialize_database()
     start_scheduler()
 
     app.run(

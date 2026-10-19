@@ -2,9 +2,9 @@ import json
 from datetime import date, time as datetime_time
 
 from flask import Blueprint, request, jsonify, session
-from psycopg2.extras import Json, RealDictCursor
 
-from db import get_connection
+from config import MYSQL_URL
+from db import get_connection, get_cursor
 
 medicines_bp = Blueprint("medicines", __name__)
 
@@ -54,7 +54,7 @@ def list_medicines():
         return jsonify({"error": "Please log in"}), 401
 
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor = get_cursor(conn)
 
     try:
         cursor.execute(
@@ -151,29 +151,36 @@ def add_medicine():
         }), 400
 
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
 
     try:
-        cursor.execute(
-            """
+        insert_sql = """
             INSERT INTO user_medicine_track_details
                 (user_id, medicine_name, dosage, frequency,
                  dose_times, start_date, end_date, instructions, status)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'Active')
-            RETURNING medicine_id
-            """,
+        """
+        if not MYSQL_URL:
+            insert_sql += " RETURNING medicine_id"
+
+        cursor.execute(
+            insert_sql,
             (
                 user_id,
                 name,
                 dosage,
                 frequency,
-                Json(times),
+                json.dumps(times),
                 start_date,
                 end_date,
                 instructions
             )
         )
-        medicine_id = cursor.fetchone()[0]
+        medicine_id = (
+            cursor.lastrowid
+            if MYSQL_URL
+            else cursor.fetchone()["medicine_id"]
+        )
 
         conn.commit()
 
@@ -201,7 +208,7 @@ def update_medicine(medicine_id):
     data = request.get_json(silent=True) or {}
 
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor = get_cursor(conn)
 
     try:
         medicine = get_medicine_for_user(cursor, medicine_id, user_id)
@@ -269,7 +276,7 @@ def delete_medicine(medicine_id):
         return jsonify({"error": "Please log in"}), 401
 
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
 
     try:
         cursor.execute(

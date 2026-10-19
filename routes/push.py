@@ -1,11 +1,8 @@
 
-import json
-
 from flask import Blueprint, jsonify, request, session
 from pywebpush import WebPushException
-from psycopg2.extras import RealDictCursor
 
-from db import get_connection
+from db import get_connection, get_cursor
 from push_utils import get_vapid_public_key, send_push
 
 push_bp = Blueprint("push", __name__)
@@ -36,7 +33,7 @@ def subscribe():
         return jsonify({"error": "Invalid push subscription"}), 400
 
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
     try:
         cursor.execute(
             """
@@ -54,7 +51,7 @@ def subscribe():
                 SET p256dh = %s, auth = %s
                 WHERE id = %s
                 """,
-                (p256dh, auth, existing[0]),
+                (p256dh, auth, existing["id"]),
             )
         else:
             cursor.execute(
@@ -80,7 +77,7 @@ def test_push():
         return jsonify({"error": "Please log in first"}), 401
 
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor = get_cursor(conn)
     try:
         cursor.execute(
             """

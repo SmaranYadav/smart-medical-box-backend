@@ -1,9 +1,9 @@
 
 from flask import Blueprint, request, jsonify, session
+import pymysql
 import psycopg2
-from psycopg2.extras import RealDictCursor
 from werkzeug.security import generate_password_hash, check_password_hash
-from db import get_connection
+from db import get_connection, get_cursor
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -24,7 +24,7 @@ def register():
         return jsonify({"error": "Password must be at least 8 characters"}), 400
 
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = get_cursor(conn)
 
     try:
         cursor.execute(
@@ -36,10 +36,10 @@ def register():
         conn.commit()
         return jsonify({"message": "Registration successful"}), 201
 
-    except psycopg2.errors.UniqueViolation:
+    except (pymysql.err.IntegrityError, psycopg2.errors.UniqueViolation):
         conn.rollback()
         return jsonify({"error": "Email already registered"}), 409
-    except psycopg2.Error:
+    except (pymysql.MySQLError, psycopg2.Error):
         conn.rollback()
         return jsonify({"error": "Could not register user"}), 500
 
@@ -58,7 +58,7 @@ def login():
         return jsonify({"error": "Email and password are required"}), 400
 
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor = get_cursor(conn)
 
     try:
         cursor.execute(
@@ -102,7 +102,7 @@ def me():
         return jsonify({"error": "Please log in"}), 401
 
     conn = get_connection()
-    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    cursor = get_cursor(conn)
 
     try:
         cursor.execute(
